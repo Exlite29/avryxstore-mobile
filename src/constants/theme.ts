@@ -1,65 +1,58 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
+import { useColorScheme } from 'react-native';
 
-import '@/global.css';
+export const lightColors = {
+  background: '#F4F6F8',
+  card: '#FFFFFF',
+  text: '#101828',
+  muted: '#667085',
+  border: '#EAECF0',
+  primary: '#0A7EA4',
+  primaryMuted: '#E0F2F8',
+  danger: '#D92D20',
+  success: '#079455',
+  warning: '#B54708',
+  white: '#FFFFFF',
+};
 
-import { Platform } from 'react-native';
+export const darkColors: typeof lightColors = {
+  background: '#0B0F19',
+  card: '#151B26',
+  text: '#F2F4F7',
+  muted: '#98A2B3',
+  border: '#1D2939',
+  primary: '#41B6E6',
+  primaryMuted: '#123047',
+  danger: '#F97066',
+  success: '#32D583',
+  warning: '#FDB022',
+  white: '#FFFFFF',
+};
 
-export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-  },
-} as const;
+export type ThemeColors = typeof lightColors;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export function useAppColors(): ThemeColors {
+  const scheme = useColorScheme();
+  return scheme === 'dark' ? darkColors : lightColors;
+}
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
+export function formatPHP(value: unknown): string {
+  const n = Number(value || 0);
+  return `₱${n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
-export const Spacing = {
-  half: 2,
-  one: 4,
-  two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
-} as const;
+export function formatNumber(value: number | string): string {
+  return Number(value || 0).toLocaleString('en-PH');
+}
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
+export function formatDate(value?: string | null): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleString('en-PH', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}

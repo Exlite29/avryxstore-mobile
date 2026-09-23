@@ -1,18 +1,22 @@
 {
   "expo": {
-    "name": "avryxstore-mobile",
-    "slug": "avryxstore-mobile",
+    "name": "Avryx Store",
+    "slug": "avryx-store",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "avryxstoremobile",
+    "scheme": "avryxstore",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow Avryx Store to access your camera to scan product barcodes."
+      }
     },
     "android": {
+      "package": "com.avryx.store",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0A7EA4",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -28,9 +32,16 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#0A7EA4",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 120
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Avryx Store to access your camera to scan product barcodes.",
+          "barcodeScannerEnabled": true
         }
       ]
     ],
