@@ -46,6 +46,12 @@ export async function clearStoredToken(): Promise<void> {
   await AsyncStorage.removeItem(TOKEN_KEY);
 }
 
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  unauthorizedHandler = handler;
+}
+
 interface RequestOptions extends Omit<AxiosRequestConfig, 'data'> {
   body?: unknown;
 }
@@ -72,6 +78,9 @@ export async function api(path: string, options: RequestOptions = {}): Promise<a
   } catch (error) {
     if (isAxiosError(error) && error.response) {
       const { status, data } = error.response;
+      if (status === 401) {
+        unauthorizedHandler?.();
+      }
       const message =
         (typeof data === 'string' && data) ||
         (data && (data.message || data.error)) ||

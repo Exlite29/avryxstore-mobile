@@ -10,11 +10,11 @@ export interface ProductQuery {
 
 export const productService = {
   getAll: async (params: ProductQuery = {}): Promise<ProductListResult> => {
-    const query: Record<string, string | number> = {};
+    const query: Record<string, string> = {};
     Object.entries(params).forEach(([k, v]) => {
-      if (v != null && v !== '') query[k] = v;
+      if (v != null && v !== '') query[k] = String(v);
     });
-    const qs = new URLSearchParams(String(query as Record<string, string>)).toString();
+    const qs = new URLSearchParams(query).toString();
     const endpoint = `/api/v1/products${qs ? `?${qs}` : ''}`;
     const response = await api(endpoint);
     const body = bodyOf(response);

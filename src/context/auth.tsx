@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { authService, LoginResult } from '@/lib/services/authService';
-import { setToken, getToken, clearStoredToken } from '@/lib/api';
+import { setToken, getToken, clearStoredToken, setUnauthorizedHandler, isApiError } from '@/lib/api';
 import { User } from '@/lib/types';
 
 const USER_KEY = 'avryx:user';
@@ -21,6 +21,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const handleUnauthorized = useCallback(async () => {
+    await clearStoredToken();
+    await AsyncStorage.removeItem(USER_KEY);
+    setUser(null);
+  }, []);
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      void handleUnauthorized();
+    });
+    return () => setUnauthorizedHandler(null);
+  }, [handleUnauthorized]);
+
   useEffect(() => {
     (async () => {
       try {
@@ -37,8 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const profile = await authService.getProfile();
           setUser(profile);
           await AsyncStorage.setItem(USER_KEY, JSON.stringify(profile));
-        } catch {
-          // Stale token — keep the saved user but let API calls surface 401s.
+        } catch (error) {
+          if (isApiError(error) && error.statusCode === 401) {
+            await handleUnauthorized();
+          }
         }
       } catch {
         // Fall through to logged-out state.
@@ -46,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [handleUnauthorized]);
 
   const login = useCallback(async (credentials: { email: string; password: string }) => {
     const result: LoginResult = await authService.login(credentials);

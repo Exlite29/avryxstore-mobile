@@ -10,11 +10,11 @@ export interface InventoryQuery {
 
 export const inventoryService = {
   getAll: async (params: InventoryQuery = {}): Promise<InventoryItem[]> => {
-    const query: Record<string, string | number> = {};
+    const query: Record<string, string> = {};
     Object.entries(params).forEach(([k, v]) => {
-      if (v != null && v !== '') query[k] = v;
+      if (v != null && v !== '') query[k] = String(v);
     });
-    const qs = new URLSearchParams(String(query as Record<string, string>)).toString();
+    const qs = new URLSearchParams(query).toString();
     const endpoint = `/api/v1/inventory${qs ? `?${qs}` : ''}`;
     const response = await api(endpoint);
     return extractList<InventoryItem>(bodyOf(response));
