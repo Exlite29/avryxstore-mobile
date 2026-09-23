@@ -54,7 +54,7 @@ export const inventoryService = {
   getValuation: async (): Promise<number> => {
     const response = await api('/api/v1/inventory/valuation');
     const body = bodyOf(response);
-    const v = body?.value ?? body?.total_value ?? body?.valuation ?? body?.total;
-    return Number(v || 0);
+    const v = body?.data || body || {};
+    return Number(v.totalValue ?? v.value ?? v.total_value ?? v.valuation ?? v.total ?? 0);
   },
 };

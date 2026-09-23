@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { Screen, Card, CardRow, ErrorState, LoadingState, Badge } from '@/components/ui';
-import { useAppColors, formatPHP, formatDate } from '@/constants/theme';
-import { reportService, TopProduct, DailyPoint } from '@/lib/services/reportService';
+import { useAppColors, formatPHP, formatNumber } from '@/constants/theme';
+import { reportService, TopProduct, DailySalesReport } from '@/lib/services/reportService';
 import { salesService } from '@/lib/services/salesService';
 import { inventoryService } from '@/lib/services/inventoryService';
 import { money } from '@/lib/types';
@@ -13,7 +13,7 @@ export default function ReportsScreen() {
   const [today, setToday] = useState({ revenue: 0, count: 0 });
   const [valuation, setValuation] = useState(0);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
-  const [daily, setDaily] = useState<DailyPoint[]>([]);
+  const [daily, setDaily] = useState<DailySalesReport>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -25,7 +25,7 @@ export default function ReportsScreen() {
         salesService.getDailySummary(),
         inventoryService.getValuation().catch(() => 0),
         reportService.getTopProducts({ from: todayDate, to: todayDate }).catch(() => []),
-        reportService.getDaily({ from: todayDate, to: todayDate }).catch(() => []),
+        reportService.getDaily({ from: todayDate, to: todayDate }).catch(() => ({})),
       ]);
       setToday({ revenue: day.total_revenue ?? day.totalRevenue ?? 0, count: day.sale_count ?? day.saleCount ?? 0 });
       setValuation(val);
@@ -110,18 +110,26 @@ export default function ReportsScreen() {
 
         <Card>
           <Text style={{ fontWeight: '800', color: colors.text }}>Sales by Day</Text>
-          {daily.length === 0 ? (
+          {!daily?.summary ? (
             <Text style={{ color: colors.muted }}>No sales data for today.</Text>
           ) : (
-            daily
-              .slice(0, 14)
-              .reverse()
-              .map((d, i) => (
-                <CardRow key={i} style={styles.listRow}>
-                  <Text style={{ color: colors.muted }}>{formatDate(d.date)}({d.day || ''})</Text>
-                  <Text style={{ color: colors.text, fontWeight: '600' }}>{formatPHP(money(d.revenue))}</Text>
+            (() => {
+              const s = daily.summary;
+              const rows = [
+                { label: 'Transactions', value: formatNumber(s.transactionCount ?? 0) },
+                { label: 'Total Sales', value: formatPHP(money(s.totalSales)) },
+                { label: 'Discounts', value: formatPHP(money(s.totalDiscount)) },
+                { label: 'Average', value: formatPHP(money(s.avgTransaction)) },
+                { label: 'Highest', value: formatPHP(money(s.highestTransaction)) },
+                { label: 'Lowest', value: formatPHP(money(s.lowestTransaction)) },
+              ];
+              return rows.map((r) => (
+                <CardRow key={r.label} style={styles.listRow}>
+                  <Text style={{ color: colors.muted }}>{r.label}</Text>
+                  <Text style={{ color: colors.text, fontWeight: '600' }}>{r.value}</Text>
                 </CardRow>
-              ))
+              ));
+            })()
           )}
         </Card>
       </ScrollView>

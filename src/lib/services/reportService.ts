@@ -16,11 +16,17 @@ export interface TopProduct {
   total_revenue?: number;
 }
 
-export interface DailyPoint {
+export interface DailySalesReport {
   date?: string;
-  day?: string;
-  revenue?: number;
-  sales?: number;
+  summary?: {
+    transactionCount?: number;
+    totalSales?: number;
+    totalDiscount?: number;
+    avgTransaction?: number;
+    highestTransaction?: number;
+    lowestTransaction?: number;
+  };
+  hourlyBreakdown?: Array<Record<string, unknown>>;
 }
 
 export const reportService = {
@@ -35,10 +41,11 @@ export const reportService = {
     return (body?.data || body?.topProducts || body?.top_products || (Array.isArray(body) ? body : [])) as TopProduct[];
   },
 
-  getDaily: async (range: DateRange = {}): Promise<DailyPoint[]> => {
+  getDaily: async (range: DateRange = {}): Promise<DailySalesReport> => {
     const response = await api('/api/v1/reports/sales/daily', { params: buildParams(range) });
     const body = bodyOf(response);
-    return (body?.data || body?.daily || (Array.isArray(body) ? body : [])) as DailyPoint[];
+    const data = body?.data && typeof body?.data === 'object' ? body.data : {};
+    return data as DailySalesReport;
   },
 
   getCashflow: async (range: DateRange = {}) => {
@@ -54,7 +61,8 @@ export const reportService = {
   getInventoryValuation: async (): Promise<number> => {
     const response = await api('/api/v1/reports/inventory/valuation');
     const body = bodyOf(response);
-    return Number(body?.value ?? body?.valuation ?? 0);
+    const v = body?.data || body || {};
+    return Number(v.totalValue ?? v.value ?? v.total_value ?? v.valuation ?? 0);
   },
 };
 

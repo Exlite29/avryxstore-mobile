@@ -11,9 +11,10 @@ export const authService = {
   login: async (credentials: { email: string; password: string }): Promise<LoginResult> => {
     try {
       const response = await api('/api/v1/auth/login', { method: 'POST', body: credentials });
-      const data = bodyOf<Partial<LoginResult>>(response);
-      const user = (data.user || data) as User;
-      const token = data.accessToken || data.token || '';
+      const data = bodyOf<Partial<LoginResult> & { data?: Partial<LoginResult> }>(response);
+      const payload = data.data && typeof data.data === 'object' ? data.data : data;
+      const user = (payload.user || payload) as User;
+      const token = payload.accessToken || payload.token || '';
       return { user, token };
     } catch (error) {
       if (isApiError(error)) throw error;
