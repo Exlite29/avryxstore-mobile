@@ -170,7 +170,7 @@ export default function ProductsScreen() {
 
       <View style={[styles.fab, { backgroundColor: colors.primary }]}>
         <TouchableOpacity onPress={() => router.push('/product-form')} style={styles.fabInner}>
-          <Ionicons name="add" size={30} color={colors.white} />
+          <Ionicons name="add" size={30} color={colors.primaryForeground} />
         </TouchableOpacity>
       </View>
     </Screen>

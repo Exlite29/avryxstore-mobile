@@ -111,11 +111,13 @@ export function Button({
           ? 'transparent'
           : colors.card;
   const textColor =
-    variant === 'primary' || variant === 'danger'
-      ? colors.white
-      : variant === 'outline'
-        ? colors.primary
-        : colors.muted;
+    variant === 'primary'
+      ? colors.primaryForeground
+      : variant === 'danger'
+        ? colors.dangerForeground
+        : variant === 'outline'
+          ? colors.primary
+          : colors.muted;
   const borderColor = variant === 'outline' ? colors.primary : colors.border;
 
   return (

@@ -73,15 +73,15 @@ export default function ReportsScreen() {
       >
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <Card style={[styles.stat, { backgroundColor: colors.primary }]}>
-            <Text style={{ color: colors.white, fontWeight: '700' }}>Sales Today</Text>
-            <Text style={{ color: colors.white, fontSize: 24, fontWeight: '900', marginTop: 4 }}>
+            <Text style={{ color: colors.primaryForeground, fontWeight: '700' }}>Sales Today</Text>
+            <Text style={{ color: colors.primaryForeground, fontSize: 24, fontWeight: '900', marginTop: 4 }}>
               {formatPHP(today.revenue)}
             </Text>
-            <Text style={{ color: colors.white + 'cc', fontSize: 12 }}>{today.count} transactions</Text>
+            <Text style={{ color: colors.primaryForeground + 'cc', fontSize: 12 }}>{today.count} transactions</Text>
           </Card>
           <Card style={[styles.stat, { backgroundColor: colors.success }]}>
-            <Text style={{ color: colors.white, fontWeight: '700' }}>Inventory Value</Text>
-            <Text style={{ color: colors.white, fontSize: 24, fontWeight: '900', marginTop: 4 }}>
+            <Text style={{ color: colors.primaryForeground, fontWeight: '700' }}>Inventory Value</Text>
+            <Text style={{ color: colors.primaryForeground, fontSize: 24, fontWeight: '900', marginTop: 4 }}>
               {formatPHP(valuation)}
             </Text>
           </Card>
