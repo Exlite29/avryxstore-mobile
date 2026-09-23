@@ -26,7 +26,7 @@ export interface DailySalesReport {
     highestTransaction?: number;
     lowestTransaction?: number;
   };
-  hourlyBreakdown?: Array<Record<string, unknown>>;
+  hourlyBreakdown?: Record<string, unknown>[];
 }
 
 export const reportService = {
