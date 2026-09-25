@@ -27,7 +27,7 @@ export const salesService = {
     Object.entries(params).forEach(([k, v]) => {
       if (v != null && v !== '') query[k] = v;
     });
-    const qs = new URLSearchParams(String(query as Record<string, string>)).toString();
+    const qs = new URLSearchParams(query as Record<string, string>).toString();
     const endpoint = `/api/v1/sales${qs ? `?${qs}` : ''}`;
     const response = await api(endpoint);
     const body = bodyOf(response);

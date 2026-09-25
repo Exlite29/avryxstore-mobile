@@ -1,4 +1,4 @@
-import { useColorScheme } from 'react-native';
+import { useTheme } from '@/context/theme';
 
 export const lightColors = {
   background: '#FFFFFF',
@@ -35,8 +35,8 @@ export const darkColors: typeof lightColors = {
 export type ThemeColors = typeof lightColors;
 
 export function useAppColors(): ThemeColors {
-  const scheme = useColorScheme();
-  return scheme === 'dark' ? darkColors : lightColors;
+  const { resolvedScheme } = useTheme();
+  return resolvedScheme === 'dark' ? darkColors : lightColors;
 }
 
 export function formatPHP(value: unknown): string {

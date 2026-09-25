@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react';
-import { Text } from 'react-native';
+import { useState } from 'react';
+import { Text, View } from 'react-native';
 import { Screen, Card, Field, Button, CardRow, showConfirm } from '@/components/ui';
 import { useAppColors } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
+import { useTheme, ThemeMode } from '@/context/theme';
 import { authService } from '@/lib/services/authService';
-import { getApiUrl, setApiUrl, DEFAULT_API_URL } from '@/lib/config';
 
 export default function SettingsScreen() {
   const colors = useAppColors();
   const { user, logout, refreshProfile } = useAuth();
+  const { mode, setMode } = useTheme();
 
   const [name, setName] = useState(user?.name || '');
   const [nameSaving, setNameSaving] = useState(false);
@@ -18,13 +19,6 @@ export default function SettingsScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState('');
-
-  const [apiUrl, setApiUrlState] = useState('');
-  const [apiSaving, setApiSaving] = useState(false);
-
-  useEffect(() => {
-    getApiUrl().then(setApiUrlState).catch(() => {});
-  }, []);
 
   const saveName = async () => {
     if (!name.trim()) return;
@@ -67,19 +61,6 @@ export default function SettingsScreen() {
     }
   };
 
-  const saveApiUrl = async () => {
-    setApiSaving(true);
-    try {
-      await setApiUrl(apiUrl.trim() || DEFAULT_API_URL);
-      setApiUrlState((apiUrl.trim() || DEFAULT_API_URL).replace(/\/+$/, ''));
-      alert('API URL updated. Please re-login to apply it securely.');
-    } catch {
-      alert('Could not save API URL.');
-    } finally {
-      setApiSaving(false);
-    }
-  };
-
   const confirmLogout = async () => {
     const ok = await showConfirm('Log out?', 'You will need to sign in again to continue.', 'Log Out');
     if (ok) await logout();
@@ -108,6 +89,21 @@ export default function SettingsScreen() {
       </Card>
 
       <Card>
+        <Text style={{ fontWeight: '800', color: colors.text }}>Appearance</Text>
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+          {(['light', 'dark', 'system'] as ThemeMode[]).map((m) => (
+            <Button
+              key={m}
+              title={m === 'light' ? 'Light' : m === 'dark' ? 'Dark' : 'System'}
+              variant={mode === m ? 'primary' : 'outline'}
+              style={{ flex: 1 }}
+              onPress={() => setMode(m)}
+            />
+          ))}
+        </View>
+      </Card>
+
+      <Card>
         <Text style={{ fontWeight: '800', color: colors.text }}>Change Password</Text>
         <FieldsPasswordField label="Current Password" value={currentPassword} onChangeText={setCurrentPassword} />
         <FieldsPasswordField label="New Password" value={newPassword} onChangeText={setNewPassword} />
@@ -118,12 +114,6 @@ export default function SettingsScreen() {
           </Text>
         ) : null}
         <Button title="Update Password" loading={passwordSaving} onPress={savePassword} variant="outline" />
-      </Card>
-
-      <Card>
-        <Text style={{ fontWeight: '800', color: colors.text }}>Server</Text>
-        <Field label="API URL" value={apiUrl} onChangeText={setApiUrlState} placeholder={DEFAULT_API_URL} autoCapitalize="none" autoCorrect={false} />
-        <Button title="Save API URL" loading={apiSaving} onPress={saveApiUrl} variant="outline" />
       </Card>
 
       <Button title="Log Out" variant="danger" onPress={confirmLogout} />

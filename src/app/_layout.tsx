@@ -1,10 +1,11 @@
-import { DarkTheme, DefaultTheme, ThemeProvider, Stack } from 'expo-router';
+import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useColorScheme, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from '@/context/auth';
+import { ThemeProvider as AppThemeProvider, useTheme } from '@/context/theme';
 import { LoadingState } from '@/components/ui';
 import { useAppColors } from '@/constants/theme';
 
@@ -12,7 +13,7 @@ SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
   const { isAuthenticated, loading } = useAuth();
-  const colorScheme = useColorScheme();
+  const { resolvedScheme } = useTheme();
   const colors = useAppColors();
 
   useEffect(() => {
@@ -26,8 +27,8 @@ function RootNavigator() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <StatusBar style="auto" />
+    <NavigationThemeProvider value={resolvedScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -48,16 +49,18 @@ function RootNavigator() {
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
       </Stack>
-    </ThemeProvider>
+    </NavigationThemeProvider>
   );
 }
 
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.root}>
-      <AuthProvider>
-        <RootNavigator />
-      </AuthProvider>
+      <AppThemeProvider>
+        <AuthProvider>
+          <RootNavigator />
+        </AuthProvider>
+      </AppThemeProvider>
     </GestureHandlerRootView>
   );
 }

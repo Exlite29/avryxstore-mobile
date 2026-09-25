@@ -58,6 +58,9 @@ interface RequestOptions extends Omit<AxiosRequestConfig, 'data'> {
 
 export async function api(path: string, options: RequestOptions = {}): Promise<any> {
   const baseURL = await getApiUrl();
+  if (!baseURL) {
+    throw new ApiError('API URL is not configured. Set EXPO_PUBLIC_API_URL and rebuild the app.', 0, 'CONFIG_ERROR');
+  }
   const token = await getToken();
 
   try {

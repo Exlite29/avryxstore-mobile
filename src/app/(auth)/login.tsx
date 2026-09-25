@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/context/auth';
 import { Screen, Field, Button } from '@/components/ui';
 import { useAppColors } from '@/constants/theme';
-import { getApiUrl } from '@/lib/config';
 
 export default function LoginScreen() {
   const colors = useAppColors();
@@ -13,11 +12,6 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [apiUrl, setApiUrl] = useState('Loading…');
-
-  useEffect(() => {
-    getApiUrl().then(setApiUrl).catch(() => {});
-  }, []);
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -73,9 +67,11 @@ export default function LoginScreen() {
 
         <Button title="Sign In" onPress={handleLogin} loading={loading} />
 
-        <Text style={{ color: colors.muted, fontSize: 12, textAlign: 'center', marginTop: 8 }}>
-          API: {apiUrl}
-        </Text>
+        <TouchableOpacity onPress={() => router.push('/register')} style={{ marginTop: 8 }}>
+          <Text style={{ color: colors.primary, textAlign: 'center', fontWeight: '600' }}>
+            Don&apos;t have an account? Register
+          </Text>
+        </TouchableOpacity>
       </View>
     </Screen>
   );

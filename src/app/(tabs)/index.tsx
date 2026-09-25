@@ -146,7 +146,7 @@ export default function ScannerScreen() {
               }}
               onBarcodeScanned={onBarcodeScanned}
             />
-            <View pointerEvents="none" style={styles.scanFrame}>
+            <View style={[styles.scanFrame, { pointerEvents: 'none' }]}>
               <Text style={styles.scanFrameText}>Point the camera at a barcode</Text>
             </View>
           </View>

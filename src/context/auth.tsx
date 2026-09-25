@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
-import { authService, LoginResult } from '@/lib/services/authService';
+import { authService, LoginResult, RegisterInput } from '@/lib/services/authService';
 import { setToken, getToken, clearStoredToken, setUnauthorizedHandler, isApiError } from '@/lib/api';
 import { User } from '@/lib/types';
 
@@ -11,6 +11,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   loading: boolean;
   login: (credentials: { email: string; password: string }) => Promise<void>;
+  register: (data: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -70,6 +71,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(result.user));
   }, []);
 
+  const register = useCallback(async (data: RegisterInput) => {
+    const result: LoginResult = await authService.register(data);
+    await setToken(result.token ?? null);
+    setUser(result.user);
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(result.user));
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await authService.logout();
@@ -97,10 +105,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!user,
       loading,
       login,
+      register,
       logout,
       refreshProfile,
     }),
-    [user, loading, login, logout, refreshProfile]
+    [user, loading, login, register, logout, refreshProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

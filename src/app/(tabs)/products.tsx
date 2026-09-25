@@ -201,11 +201,7 @@ const styles = StyleSheet.create({
     right: 20,
     bottom: 24,
     borderRadius: 28,
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
+    boxShadow: '0 3px 6px rgba(0,0,0,0.25)',
   },
   fabInner: {
     width: 56,
