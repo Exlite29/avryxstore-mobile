@@ -64,7 +64,7 @@ export async function api(path: string, options: RequestOptions = {}): Promise<a
   const token = await getToken();
 
   try {
-    const response = await axios.request({
+    const response = await requestWithRetry({
       url: path,
       baseURL,
       method: options.method || 'GET',
@@ -99,6 +99,26 @@ export async function api(path: string, options: RequestOptions = {}): Promise<a
       throw new ApiError('Cannot reach the server. Check your connection and API URL.', 0, 'NETWORK_ERROR');
     }
     throw new ApiError(error instanceof Error ? error.message : 'Request failed', 500, 'UNKNOWN_ERROR');
+  }
+}
+
+const RETRYABLE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+function isRetryableMethod(method?: string) {
+  return RETRYABLE_METHODS.has((method || 'GET').toUpperCase());
+}
+
+async function requestWithRetry(config: AxiosRequestConfig, attempt = 1): Promise<any> {
+  try {
+    return await axios.request(config);
+  } catch (error) {
+    const isConnectionFailure =
+      isAxiosError(error) && !!error.request && !error.response && error.code !== 'ECONNABORTED';
+    if (isConnectionFailure && isRetryableMethod(config.method) && attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      return requestWithRetry(config, attempt + 1);
+    }
+    throw error;
   }
 }
 

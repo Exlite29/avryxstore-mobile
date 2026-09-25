@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Alert, FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen, Card, EmptyState, ErrorState, LoadingState, Badge, showConfirm } from '@/components/ui';
 import { useAppColors, formatPHP } from '@/constants/theme';
@@ -18,53 +18,66 @@ export default function ProductsScreen() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const searchRef = useRef(search);
+  const requestIdRef = useRef(0);
+  const didSearchLoadRef = useRef(false);
 
   const fetchPage = useCallback(async (pageNum: number, term: string, append: boolean) => {
+    const requestId = ++requestIdRef.current;
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setPage(1);
+      setLoading(true);
+      setLoadingMore(false);
+      setError('');
+    }
+
     try {
       const result = await productService.getAll({ page: pageNum, limit: 20, search: term });
+      if (requestId !== requestIdRef.current) return;
       const newItems = result.items || [];
       setProducts((prev) => (append ? [...prev, ...newItems] : newItems));
       const totalPages = result.pagination.totalPages || 1;
       setHasMore(pageNum < totalPages);
+      if (append) setPage(pageNum);
       setError('');
     } catch (e: any) {
+      if (requestId !== requestIdRef.current) return;
       setError(e?.message || 'Failed to load products.');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+      }
     }
   }, []);
 
-  const load = useCallback(
-    (append = false) => {
-      fetchPage(append ? page + 1 : 1, searchRef.current, append);
-      if (append) setPage((p) => p + 1);
-    },
-    [fetchPage, page]
+  useFocusEffect(
+    useCallback(() => {
+      void fetchPage(1, searchRef.current, false);
+    }, [fetchPage])
   );
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Debounced search
-  useEffect(() => {
     searchRef.current = search;
-    const t = setTimeout(() => {
+    if (!didSearchLoadRef.current) {
+      didSearchLoadRef.current = true;
+      return;
+    }
+    const timer = setTimeout(() => {
       setPage(1);
-      setLoading(true);
-      fetchPage(1, search, false);
+      void fetchPage(1, search, false);
     }, 400);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [search, fetchPage]);
 
   const onRefresh = () => {
     setRefreshing(true);
     searchRef.current = search;
-    setPage(1);
-    fetchPage(1, search, false);
+    void fetchPage(1, search, false);
   };
 
   const handleDelete = async (product: Product) => {
@@ -74,7 +87,7 @@ export default function ProductsScreen() {
       await productService.delete(product.id);
       setProducts((prev) => prev.filter((p) => p.id !== product.id));
     } catch (e: any) {
-      alert(e?.message || 'Failed to delete product');
+      Alert.alert('Delete failed', e?.message || 'Failed to delete product.');
     }
   };
 
@@ -92,7 +105,7 @@ export default function ProductsScreen() {
   if (error && products.length === 0) {
     return (
       <Screen scroll={false}>
-        <ErrorState message={error} onRetry={() => { setLoading(true); load(); }} />
+        <ErrorState message={error} onRetry={() => { setLoading(true); void fetchPage(1, searchRef.current, false); }} />
       </Screen>
     );
   }
@@ -134,7 +147,9 @@ export default function ProductsScreen() {
           />
         }
         onEndReached={() => {
-          if (hasMore && !loading) load(true);
+          if (hasMore && !loading && !loadingMore) {
+            void fetchPage(page + 1, searchRef.current, true);
+          }
         }}
         onEndReachedThreshold={0.3}
         renderItem={({ item }) => {

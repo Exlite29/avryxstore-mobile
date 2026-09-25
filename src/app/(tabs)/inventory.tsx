@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen, Card, Button, EmptyState, ErrorState, LoadingState, Badge, SheetModal } from '@/components/ui';
 import { useAppColors } from '@/constants/theme';
@@ -82,7 +82,7 @@ export default function InventoryScreen() {
       setSelected(null);
       onRefresh();
     } catch (e: any) {
-      alert(e?.message || 'Failed to update stock.');
+      Alert.alert('Stock update failed', e?.message || 'Failed to update stock.');
     } finally {
       setBusy(false);
     }

@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { forwardRef, ReactNode } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -139,15 +139,16 @@ export function Button({
 
 /* ---------------------------- Text field ---------------------------- */
 
-export function Field({
-  label,
-  ...props
-}: TextInputProps & { label: string }) {
+export const Field = forwardRef<TextInput, TextInputProps & { label: string }>(function Field(
+  { label, ...props },
+  ref
+) {
   const colors = useAppColors();
   return (
     <View style={{ gap: 6 }}>
       <Text style={{ fontSize: 13, fontWeight: '600', color: colors.muted }}>{label}</Text>
       <TextInput
+        ref={ref}
         placeholderTextColor={colors.muted}
         {...props}
         style={[
@@ -166,7 +167,7 @@ export function Field({
       />
     </View>
   );
-}
+});
 
 /* ------------------------------ Badge ------------------------------- */
 
@@ -246,6 +247,10 @@ export function EmptyState({ icon, title, subtitle }: { icon?: ReactNode; title:
 
 export function showConfirm(title: string, message: string, okText = 'OK', destructive = false) {
   return new Promise<boolean>((resolve) => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.confirm === 'function') {
+      resolve(window.confirm(`${title}\n\n${message}`));
+      return;
+    }
     Alert.alert(title, message, [
       { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
       { text: okText, style: destructive ? 'destructive' : 'default', onPress: () => resolve(true) },

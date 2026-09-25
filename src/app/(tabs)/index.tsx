@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { useIsFocused } from 'expo-router';
@@ -30,7 +30,10 @@ export default function ScannerScreen() {
   const [paying, setPaying] = useState(false);
   const [completedSale, setCompletedSale] = useState<any>(null);
 
-  const lastScanRef = useRef<{ value: string; at: number }>({ value: '', at: 0 });
+  const cameraScanRef = useRef<{ value: string; lastSeenAt: number } | null>(null);
+  const pendingBarcodeRef = useRef<string | null>(null);
+  const transactionIdRef = useRef(0);
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const total = useMemo(
     () => cart.reduce((sum, line) => sum + money(line.product.unit_price ?? line.product.price) * line.quantity, 0),
@@ -49,33 +52,46 @@ export default function ScannerScreen() {
   }, []);
 
   const handleBarcode = useCallback(
-    async (barcode: string) => {
+    async (barcode: string, source: 'camera' | 'manual' = 'manual') => {
       const cleaned = barcode.trim();
       if (!cleaned) return;
 
       const now = Date.now();
-      if (lastScanRef.current.value === cleaned && now - lastScanRef.current.at < 1500) {
-        return;
+      if (source === 'camera') {
+        const previous = cameraScanRef.current;
+        if (previous?.value === cleaned && now - previous.lastSeenAt < 1500) {
+          previous.lastSeenAt = now;
+          return;
+        }
+        cameraScanRef.current = { value: cleaned, lastSeenAt: now };
       }
-      lastScanRef.current = { value: cleaned, at: now };
+      if (pendingBarcodeRef.current === cleaned) return;
+      pendingBarcodeRef.current = cleaned;
       setLastScan(cleaned);
 
+      const transactionId = transactionIdRef.current;
       try {
         const product = await productService.getByBarcode(cleaned);
+        if (transactionId !== transactionIdRef.current) return;
         if (product) {
           addToCart(product);
         } else {
           Alert.alert('Product not found', `No product has barcode ${cleaned}. Add it from the Products tab.`);
         }
       } catch (e: any) {
+        if (transactionId !== transactionIdRef.current) return;
         Alert.alert('Scan failed', e?.message || 'Could not look up this barcode.');
+      } finally {
+        if (pendingBarcodeRef.current === cleaned) {
+          pendingBarcodeRef.current = null;
+        }
       }
     },
     [addToCart]
   );
 
   const onBarcodeScanned = (result: BarcodeScanningResult) => {
-    handleBarcode(result.data);
+    handleBarcode(result.data, 'camera');
   };
 
   const removeLine = (productId: number) => {
@@ -86,6 +102,13 @@ export default function ScannerScreen() {
   const change = paid - total;
 
   const resetTransaction = useCallback(() => {
+    if (resetTimerRef.current !== null) {
+      clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
+    }
+    transactionIdRef.current += 1;
+    pendingBarcodeRef.current = null;
+    cameraScanRef.current = null;
     setCart([]);
     setAmountPaid('');
     setCheckoutOpen(false);
@@ -109,14 +132,28 @@ export default function ScannerScreen() {
       });
       setCompletedSale(sale || { change });
       refreshProfile();
-      // Auto-start the next transaction after 5 seconds.
-      setTimeout(resetTransaction, 5000);
+      if (resetTimerRef.current !== null) {
+        clearTimeout(resetTimerRef.current);
+      }
+      resetTimerRef.current = setTimeout(() => {
+        resetTimerRef.current = null;
+        resetTransaction();
+      }, 5000);
     } catch (e: any) {
       Alert.alert('Checkout failed', e?.message || 'Could not complete the sale.');
     } finally {
       setPaying(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      transactionIdRef.current += 1;
+      if (resetTimerRef.current !== null) {
+        clearTimeout(resetTimerRef.current);
+      }
+    };
+  }, []);
 
   const cameraActive = isFocused && !checkoutOpen;
 

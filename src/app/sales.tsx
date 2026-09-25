@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
-import { FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Alert, FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen, Card, CardRow, Button, EmptyState, ErrorState, LoadingState, StatusBadge, SheetModal, showConfirm } from '@/components/ui';
 import { useAppColors, formatPHP, formatDate } from '@/constants/theme';
@@ -18,37 +19,55 @@ export default function SalesScreen() {
   const [hasMore, setHasMore] = useState(false);
   const [selected, setSelected] = useState<Sale | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const requestIdRef = useRef(0);
 
   const load = useCallback(async (pageNum: number, append: boolean) => {
+    const requestId = ++requestIdRef.current;
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setPage(1);
+      setLoading(true);
+      setLoadingMore(false);
+      setError('');
+    }
+
     try {
       const [result, day] = await Promise.all([salesService.getAll({ page: pageNum, limit: 20 }), salesService.getDailySummary()]);
-      const newItems = result.items;
+      if (requestId !== requestIdRef.current) return;
+      const newItems = result.items || [];
       setSales((prev) => (append ? [...prev, ...newItems] : newItems));
       setHasMore(pageNum < (result.pagination.totalPages || 1));
+      if (append) setPage(pageNum);
       setSummary({ revenue: day.total_revenue ?? day.totalRevenue ?? 0, count: day.sale_count ?? day.saleCount ?? 0 });
       setError('');
     } catch (e: any) {
+      if (requestId !== requestIdRef.current) return;
       setError(e?.message || 'Failed to load sales.');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+      }
     }
   }, []);
 
-  useEffect(() => {
-    load(1, false);
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      void load(1, false);
+    }, [load])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
-    setPage(1);
-    load(1, false);
+    void load(1, false);
   };
 
   const loadMore = () => {
-    if (!hasMore || loading) return;
-    setPage((p) => p + 1);
-    load(page + 1, true);
+    if (!hasMore || loading || loadingMore) return;
+    void load(page + 1, true);
   };
 
   const totalOf = (sale: Sale) => money(sale.total_amount ?? sale.total);
@@ -63,7 +82,7 @@ export default function SalesScreen() {
       setSelected(null);
       onRefresh();
     } catch (e: any) {
-      alert(e?.message || 'Failed to cancel sale.');
+      Alert.alert('Cancel sale failed', e?.message || 'Failed to cancel sale.');
     } finally {
       setCancelling(false);
     }
@@ -80,7 +99,7 @@ export default function SalesScreen() {
   if (error && sales.length === 0) {
     return (
       <Screen>
-        <ErrorState message={error} onRetry={() => { setLoading(true); setPage(1); load(1, false); }} />
+        <ErrorState message={error} onRetry={() => { void load(1, false); }} />
       </Screen>
     );
   }

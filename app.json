@@ -41,7 +41,8 @@
         "expo-camera",
         {
           "cameraPermission": "Allow Avryx Store to access your camera to scan product barcodes.",
-          "barcodeScannerEnabled": true
+          "barcodeScannerEnabled": true,
+          "recordAudioAndroid": false
         }
       ]
     ],

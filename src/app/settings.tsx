@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import { Screen, Card, Field, Button, CardRow, showConfirm } from '@/components/ui';
 import { useAppColors } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
@@ -27,7 +27,7 @@ export default function SettingsScreen() {
       await authService.updateProfile({ name: name.trim() });
       await refreshProfile();
     } catch (e: any) {
-      alert(e?.message || 'Failed to update profile.');
+      Alert.alert('Profile update failed', e?.message || 'Failed to update profile.');
     } finally {
       setNameSaving(false);
     }
